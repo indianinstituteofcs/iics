@@ -1,0 +1,25 @@
+<head>
+    <link href="/css/bootstrap.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+    <div id="nav">
+        <%- include('partials/navigation') %>
+    </div>
+
+    <% if(typeof messages !== undefined) {%>
+        <div class="text-center" style="margin-top:1rem;margin-bottom:1rem;background-color:#cf142b;color:white">
+            <p class="lead"> <%= messages.error %> </p>
+        </div>
+        <div class="text-center" style="margin-top:1rem;margin-bottom:1rem;background-color:#90EE90;">
+            <p class="lead"> <%= messages.success %> </p>
+        </div>
+    <% } %>
+
+    <%- body %>
+
+    <div id="footer">
+        <%- include('partials/footer') %>
+    </div>
+</body>
+  

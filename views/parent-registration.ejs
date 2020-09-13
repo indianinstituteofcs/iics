@@ -1,0 +1,52 @@
+<div>
+    <h3 class="container text-center" style="margin-top:2rem">Parent Account Registration</h3>
+    <div class="col" style="margin-top:2rem">
+        <form name="form-sign-up" method="POST" action="/parent-registration" style="margin-top:2rem">
+            <div class="text-center" style="margin-top:1rem">
+                <label for="first_name" style="width:9rem;text-align:right;">First Name:</label>
+                <% if((typeof firstName === 'undefined') || (firstName === null)){ %>
+                    <input id="first_name" type="text" name="first_name" placeholder="First Name" style="width:65%;" required>
+                <% } else { %>
+                    <input id="first_name" type="text" name="first_name" style="width:65%;" value=<%= firstName; %> >
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="last_name" style="width:9rem;text-align:right;">Last Name:</label>
+                <% if((typeof lastName === 'undefined') || (lastName === null)){ %>
+                    <input id="last_name" type="text" name="last_name" placeholder="Last Name" style="width:65%;" required>
+                <% } else { %>
+                    <input id="last_name" type="text" name="last_name" style="width:65%;" value=<%= lastName; %>>
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="user_email" style="width:9rem;text-align:right;">Email:</label>
+                <% if((typeof registerEmail === 'undefined') || (registerEmail === null)){ %>
+                    <input id="user_email" type="email" name="user_email" placeholder="Email" style="width:65%;" required>
+                <% } else { %>
+                    <input id="user_email" type="email" name="user_email" style="width:65%;" value=<%= registerEmail; %>>
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="confirm_user_email" style="width:9rem;text-align:right;">Confirm Email:</label>
+                <input id="confirm_user_email" type="email" name="confirm_user_email" placeholder="Confirm email" style="width:65%;">
+            </div>    
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="user_password" style="width:9rem;text-align:right;">Password:</label>
+                <input id="user_password" type="password" name="user_password" placeholder="AlphaNumeric. Length must be > 8" style="width:65%;" required>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="confirm_user_password" style="width:9rem;text-align:right;">Confirm Password:</label>
+                <input id="confirm_user_password" type="password" name="confirm_user_password" placeholder="Confirm password" style="width:65%;" required>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <input type="submit" value="Register" style="width:35%" class="btn btn-md btn-info">
+            </div>
+        </form>  
+    </div>
+</div>
