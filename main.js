@@ -1,63 +1,82 @@
-const   mongoose = require("mongoose");
-
-mongoose.connect("mongodb://localhost:27017/iics_DB", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log("Connected to MongoDB via mongoose....."))
-.catch((err) => console.log(err));
-
-const   db = mongoose.connection;
-const   Parent = require("./models/parent");
 const   express = require("express");
+const   app = express();
 const   layouts = require("express-ejs-layouts");
+const   mongoose = require("mongoose");
 const   homeController = require("./controllers/homeController");
 const   errorController = require("./controllers/errorController");
 const   parentController = require("./controllers/parentController");
+const   router = express.Router();
+const   methodOverride = require("method-override");
 const   expressSession = require("express-session");
 const   cookieParser = require("cookie-parser");
 const   connectFlash = require("connect-flash");
-const   app = express();
+const   expressValidator = require("express-validator");
+const   passport = require("passport");
+const   Parent = require("./models/parent");
 
-mongoose.Promise = global.Promise;
-app.use(express.static(__dirname + '/public'));
-app.set("port", process.env.PORT || 3000);
+mongoose.connect(
+    "mongodb://localhost:27017/iics_DB", 
+    {useNewUrlParser: true,
+        useUnifiedTopology: true}
+    )
+.then(() => console.log("Connected to MongoDB via mongoose....."))
+.catch((err) => console.log(err));
+
+
 app.set('view engine', 'ejs');
-app.use(layouts);
+app.set("port", process.env.PORT || 3000);
 app.use(express.urlencoded({ extended: false}));
 app.use(express.json());
+app.use(layouts);
+app.use(express.static("public"));
 
-app.use(cookieParser("secret_passcode"));
-app.use(expressSession({
+router.use(methodOverride("_method", {
+    methods: ["POST", "GET"]
+}));
+router.use(cookieParser("secret_passcode"));
+router.use(expressSession({
     secret:"secret_passcode",
     cookie:{maxAge:4000000},
     resave:true,
     saveUninitialized:true
 }));
-app.use(connectFlash());
+router.use(connectFlash());
+router.use(expressValidator()); //Must come after json and urlencoded uses.
 
-app.use((req, res, next) => {
-    res.locals.messages = req.flash();       1
+router.use(passport.initialize());
+router.use(passport.session()); //Session must come before this line.
+passport.use(Parent.createStrategy()); //Parent must be required before this line
+passport.serializeUser(Parent.serializeUser());
+passport.deserializeUser(Parent.deserializeUser());
+
+router.use((req, res, next) => {
+    res.locals.flashMessages = req.flash();
+    res.locals.loggedIn = req.isAuthenticated();
+    console.log("Logged" + res.locals.loggedIn);
+    res.locals.currentUser = req.user;
     next();
   });
 
 
-app.get("/", homeController.sendRoot);
-app.get("/about", homeController.sendAbout);
-app.get("/class", homeController.sendClass);
-app.get("/parent-area", parentController.sendParentArea);
-app.get("/parent-account", parentController.sendParentAccount);
-app.get("/parent-registration", parentController.sendParentRegistration);
-app.get("/registered-parents", parentController.getAllParents);
+router.get("/", homeController.getRoot);
+router.get("/about", homeController.getAbout);
+router.get("/class", homeController.getClass);
+router.get("/parent/:id", parentController.show, parentController.showView);
+router.get("/parent/new", parentController.new);
+router.get("/parent/signup", parentController.signUp);
+router.post("/parent/sign-up", parentController.authenticate);
+router.get("/parent/logout", parentController.logout, parentController.redirectView);
+router.post("/parent/create", parentController.validate, parentController.create, parentController.redirectView);
 
-app.post("/parent-account", parentController.emailCheck);
-app.post("/parent-registration", parentController.registerParent);
+router.get("/registered-parents", parentController.getAllParents);
 
-app.use(errorController.logErrors);
-app.use(errorController.respondInternalError);
-app.use(errorController.respondNoResourceFound);
-app.use(homeController.logPathRequests);
-  
+
+
+router.use(errorController.logErrors);
+router.use(errorController.respondInternalError);
+router.use(errorController.respondNoResourceFound);
+
+app.use("/",router);
 const port = app.get("port");
 app.listen(port, () => {
     console.log(`Server running at http://localhost: ${port}`);
