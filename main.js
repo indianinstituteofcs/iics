@@ -1,9 +1,11 @@
+"use strict";
+
 const   express = require("express");
 const   app = express();
-const   layouts = require("express-ejs-layouts");
-const   mongoose = require("mongoose");
 const   homeController = require("./controllers/homeController");
 const   errorController = require("./controllers/errorController");
+const   layouts = require("express-ejs-layouts");
+const   mongoose = require("mongoose");
 const   parentController = require("./controllers/parentController");
 const   router = express.Router();
 const   methodOverride = require("method-override");
@@ -12,6 +14,7 @@ const   cookieParser = require("cookie-parser");
 const   connectFlash = require("connect-flash");
 const   expressValidator = require("express-validator");
 const   passport = require("passport");
+//PASS const   LocalStrategy = require('passport-local').Strategy;
 const   Parent = require("./models/parent");
 
 mongoose.connect(
@@ -37,15 +40,29 @@ router.use(cookieParser("secret_passcode"));
 router.use(expressSession({
     secret:"secret_passcode",
     cookie:{maxAge:4000000},
-    resave:true,
-    saveUninitialized:true
+    resave:false,
+    saveUninitialized:false
 }));
 router.use(connectFlash());
-router.use(expressValidator()); //Must come after json and urlencoded uses.
+//router.use(expressValidator()); //Must come after json and urlencoded uses.
 
 router.use(passport.initialize());
 router.use(passport.session()); //Session must come before this line.
-passport.use(Parent.createStrategy()); //Parent must be required before this line
+
+passport.use(Parent.createStrategy()); 
+/*passport.use(new LocalStrategy(Parent.authenticate())); 
+passport.use(new LocalStrategy(
+    function(username, password, done) {
+        Parent.findOne({ username: username }, function (err, user) {
+            if (err) { return done(err); }
+            if (!user) { return done(null, false); }
+            if (!user.verifyPassword(password)) { return done(null, false); }
+            return done(null, user);
+        });
+    }
+));*/
+
+//Parent must be required before this line
 passport.serializeUser(Parent.serializeUser());
 passport.deserializeUser(Parent.deserializeUser());
 
@@ -61,15 +78,15 @@ router.use((req, res, next) => {
 router.get("/", homeController.getRoot);
 router.get("/about", homeController.getAbout);
 router.get("/class", homeController.getClass);
-router.get("/parent/:id", parentController.show, parentController.showView);
+router.get("/parent/show/", parentController.showView);
 router.get("/parent/new", parentController.new);
 router.get("/parent/signup", parentController.signUp);
-router.post("/parent/sign-up", parentController.authenticate);
+router.post("/parent/new", parentController.validationChainEmailCheck, parentController.validateEmailCheck, parentController.redirectView);
+router.post("/parent/login", parentController.validationChainLogIn, parentController.validateLogIn);
 router.get("/parent/logout", parentController.logout, parentController.redirectView);
-router.post("/parent/create", parentController.validate, parentController.create, parentController.redirectView);
+router.post("/parent/create",parentController.validationChain, parentController.validate, parentController.redirectView);
 
 router.get("/registered-parents", parentController.getAllParents);
-
 
 
 router.use(errorController.logErrors);

@@ -2,7 +2,11 @@
     <div class="jumbotron" style="width:95%;margin:auto;margin-top:2rem">
 
         <h1>Parent's Area</h1>
-        <p>Name: <%= user.fullName %></p>
-        <p>Email: <%= user.email %></p>
+        <% if( currentUser) { %>
+            <p>Name: <%= currentUser.fullName %></p>
+            <p>Email: <%= currentUser.email %></p>
+        <% } else { %>
+            <p>No Current parent to show</p>
+        <% } %>            
     </div>
 </div>

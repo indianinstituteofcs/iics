@@ -1,9 +1,10 @@
-"use strict";
+//"use strict";
 
 const   Parent = require("../models/parent");
 const   passport = require("passport");
+const { check, validationResult } = require("express-validator");
 
-var displayParent = null;
+const fName = "parentController:";
 
 getUserParams = (body) => {
     let userParams = {
@@ -25,23 +26,10 @@ exports.getAllParents = (req, res, next) => {
     });
 };
 
-exports.show = (req, res, next) => {
-    console.log("GET:show the parent by id:");
-    let userId = req.params.id;
-    Parent.findById(userId)
-    .then(user => {
-        res.locals.user = user;
-        next();
-    })
-    .catch(error => {
-        console.log(`Error fetching user by Id(${userId}): ${error.message}`);
-        next(error);
-    })
-};
-
 
 exports.redirectView = (req, res, next) => {
     let redirectPath = res.locals.redirect;
+    console.log(fName + "redirectView to: "+ redirectPath);
 
     if (redirectPath) {
         res.redirect(redirectPath);
@@ -51,11 +39,14 @@ exports.redirectView = (req, res, next) => {
 }
 
 exports.showView = (req, res) => {
+    console.log(fName + "showView: user: "+req.user);
     res.render("parent/show");
 };
 
 exports.new = (req, res) => { //Take input to create a new parent
-    console.log("GET:new:");
+    console.log(fName +"new: req.query:");
+    console.log(req.query);
+
     res.render("parent/new", {
         firstName:req.query.firstName,
         lastName:req.query.lastName,
@@ -65,111 +56,88 @@ exports.new = (req, res) => { //Take input to create a new parent
 
 
 exports.signUp = (req, res) => {
-    console.log("GET:signUp:");
-    res.render("parent/sign-up", {
+    console.log(fName+ "signUp:");
+    res.render("parent/signup", {
         newParentEmail:req.query.newParentEmail,
-        loginEmail:req.query.loginEmail
+        email:req.query.loginEmail
     });
 };
 
 
-authenticateThenRegister = (req, res, next) => {
-    let inputEmail = req.body.register_user_email;
-    Parent.findOne({email: inputEmail})
-    .exec()
+//JC TO DO WHY?!?!passport has to be called like this - stand alone. Moment it is in a function it hangs!!!
+authenticateThenLogin =
+    passport.authenticate("local", {
+        failureRedirect: `/parent/signup`,
+        failureFlash: true,
+        successRedirect: `/parent/show/`,
+        successFlash: `Logged In!`
+    });
 
-    .then((data)=>{
-        if(data){
-            req.flash("error",`${inputEmail} is registered. Try logging in with it.`);
-            console.log(`ERROR: ${inputEmail} is registered. Try logging in with it.`);
-            res.redirect("parent/sign-up?logInEmail=" + inputEmail);
-        } else {
-            console.log("parentController:emailCheck: " + inputEmail + " is new. Register user");
-            res.redirect("parent/new?userEmail=" + inputEmail);
+
+exports.validationChainLogIn = [
+    check("email", "Invalid email").normalizeEmail().trim().isEmail(),
+    check("password", "8 <= password length <= 15.").isLength({min:8, max:15}),
+    check("password", "Password is not alphanumeric").isAlphanumeric(),
+    check("password", "Password missing 1 number").matches(/\d{1}/),
+    check("password", "Password missing 1 letter").matches(/[A-Z]{1}/i)
+];
+
+exports.validateLogIn = (req, res, next) => {
+    error = validationResult(req);
+    if (!error.isEmpty()) {
+        let messages = error.array().map(e => e.msg);
+        let messageString = messages.join(" and ");
+        console.log("ERROR: validating login information: " + messageString);
+        req.flash("error", messageString);
+        var redirectPath = "/parent/signup";
+        if(!messageString.includes("Invalid email")){
+            redirectPath = redirectPath + "&email=" + req.body.email;
         }
-    })
-
-    .catch((error) => {
-        console.log(`Error fetching user by email(${inputEmail}): ${error.message}`);
-        next(error);
-    })
-}
-
-isPasswordValid = (req, password) => {
-    console.log("In isPasswordValid");
-    var valid = true;
-
-    var regexAlphaNumeric = /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z]+$/;
-    if (!password.match(regexAlphaNumeric)){
-        req.flash("error",`Invalid Password [${password}]: must be Alphanumeric. With at least 1 number and 1 letter.`);
-        console.log("Invalid Password: must be Alphanumeric. With at least 1 number and 1 letter.");
-        valid = false;
+        res.redirect(redirectPath);
+    } else {
+        console.log("SUCCESS: email ("+ req.query.email +") and password ("+ req.query.password +")are valid");
+        authenticateThenLogin(req, res, next);
     }
-
-    if ((password.length < 8) || (20 < password.length )){
-        req.flash("error",`Invalid Password [${password}]: 8 <= Password length <= 20.`);
-        console.log("Invalid Password: 8 <= Password length <= 20");
-        valid = false;
-    }
-
-    return valid;
 }
 
 
-authenticateThenLogin = (req, res, next) =>{
-    let inputEmail = req.body.logInEmail;
-
-    Parent.findOne({email: inputEmail})
-    .exec()
-
-    .then((data)=>{
-        if(!data){//User is not in database.
-            console.log(`Error: ${inputEmail} is not registered`);
-            req.flash("error", `${inputEmail} is not registered`);
-            res.redirect("parent/sign-up?registerEmail=" + inputEmail);
-        } else {
-            passport.authenticate("local", {
-                failureRedirect: `parent/sign-up?loginEmail=${inputEmail}`,
-                failureFlash: `Incorrect password for ${data.fullName}!`,
-                successRedirect: "parent/show",
-                successFlash: `${data.fullName} - logged in successfully!`
-            });
-        }
-    })
-
-    .catch((error) => {
-        console.log(`Searhing databse for ${inputEmail} gave error: ${error.message}`);
-        next(error);
-    })
-}
+exports.validationChainEmailCheck = [
+    check("newParentEmail", "Invalid email").normalizeEmail().trim().isEmail()
+];
 
 
-exports.authenticate = (req, res, next) => {
-    console.log("parentController:authenticate call back for POST:parent/sign-up");
-    let callType = req.query.type;
-
-    if(callType === "register"){
-        console.log("Trying to register as new parent");
-        authenticateThenRegister(req, res, next);
-    } else if (callType === "login"){
-        let inputEmail = req.body.logInEmail;
-        let password = req.body.password;
-
-        console.log("Login credentials: email: "+inputEmail+" Password: "+password);
-        if((typeof inputEmail === 'undefined') || (inputEmail === null) || (inputEmail === "")){
-            req.flash("error","Email is empty - cannot login without it");
-            console.log("ERROR: Email is empty - cannot login without it");
-            res.redirect("parent/sign-up");
-        } else {
-            if (isPasswordValid(req, password)){
-                authenticateThenLogin(req, res, next);
+exports.validateEmailCheck = (req, res, next) => {
+    error = validationResult(req);
+    if (!error.isEmpty()) {
+        let messageString = error.array().map(e => e.msg);
+        console.log("ERROR: validating email for new Parent: " + messageString);
+        req.flash("error", messageString);
+        res.locals.redirect = "/parent/signup";
+        next();
+    } else {
+        console.log("SUCCESS: email for new Parent is valid");
+        let inputEmail = req.body.newParentEmail;
+        Parent.findOne({email: inputEmail})
+        .exec()
+    
+        .then((data)=>{
+            if(data){
+                req.flash("error",`${inputEmail} is registered. Try logging in with it.`);
+                console.log(`ERROR: ${inputEmail} is registered. Try logging in with it.`);
+                res.locals.redirect = "/parent/signup?email=" + inputEmail;
             } else {
-                console.log("Error: parentController:authenticate: password is invalid. Back to parent signup page.");
-                res.redirect("parent/sign-up?logInEmail="+inputEmail);    
+                console.log(inputEmail + " is new. Register user");
+                res.locals.redirect = "/parent/new?userEmail=" + inputEmail;
             }
-        }
+            next();
+        })
+    
+        .catch((error) => {
+            console.log(`Error fetching user by email(${inputEmail}): ${error.message}`);
+            next(error);
+        })    
     }
-};
+}
 
 
 exports.logout = (req, res, next) => {
@@ -180,8 +148,43 @@ exports.logout = (req, res, next) => {
 }
 
 
-exports.create = (req, res, next) => {
-    if (req.skip) next();
+const emailErrorMessage = "Invalid email";
+
+
+exports.validationChain = [
+    check("first").trim().escape(),
+    check("last").trim().escape(),
+    check("email", emailErrorMessage).normalizeEmail().trim().isEmail(),
+    check("password", "8 <= password length <= 15.").isLength({min:8, max:15}),
+    check("password", "Password is not alphanumeric").isAlphanumeric(),
+    check("password", "Password missing 1 number").matches(/\d{1}/),
+    check("password", "Password missing 1 letter").matches(/[A-Z]{1}/i),
+    check('confirmPassword', 'Passwords do not match').custom((value, {req}) => (value === req.body.password))
+];
+
+
+exports.validate = (req, res, next) => {
+    error = validationResult(req);
+    if (!error.isEmpty()) {
+        let messages = error.array().map(e => e.msg);
+        let messageString = messages.join(" and ");
+        console.log("ERROR: validating registration form: " + messageString);
+        req.flash("error", messageString);
+        var redirectPath = "/parent/new?firstName=" + req.body.first + "&lastName=" + req.body.last;
+        if(!messageString.includes(emailErrorMessage)){
+            redirectPath = redirectPath + "&userEmail=" + req.body.email;
+        }
+        res.locals.redirect = redirectPath;
+        next();
+    } else {
+        console.log("SUCCESS: all registration form input are valid");
+        create(req,res,next);
+    }
+}
+
+create = (req, res, next) => {
+    console.log("parentController:create");
+    //if (req.skip) next();
     let userParams = getUserParams(req.body);
 
     Parent.findOne({email: userParams.email})
@@ -191,20 +194,28 @@ exports.create = (req, res, next) => {
         if(data){//email is in DB. Send it to login screen with message
             req.flash("error", `${userParams.email} is already registered`);
             console.log("ERROR: " + userParams.email + " is already registered");
-            res.redirect("parent/sign-up/?logInEmail="+userParams.email);
+            res.locals.redirect = `parent/signup/?loginEmail=${userParams.email}`;
+            return next();
         } else { //email is NOT in DB. Create new parent object, save to DB and go to parent area.
-            const parentTemp = new Parent(userParams);
+            console.log("User ("+userParams.email+") is not in DB. Will try to add it.");
+            const newParent = new Parent(userParams);
 
             Parent.register(newParent, req.body.password, (error, user) => {
                 if (user) {
                     req.flash("success", `${user.fullName}'s account created successfully!`);
+                    req.login(user, function(err) {
+                        if (err) { 
+                            console.log("ERROR: " + user.fullName + "registered but could not log in");
+                            return next(err); 
+                        }
+                        res.locals.currentUser = user;
+                      });
                     res.locals.redirect = "/parent/show";
-                    next();
                 } else {
                     req.flash("error", `Failed to create user account because: ${error.message}.`);
                     res.locals.redirect = "/parent/new";
-                    next();
                 }
+                return next();
             });
         }
     })
@@ -216,48 +227,4 @@ exports.create = (req, res, next) => {
     })
 }
 
-exports.validate = (req, res, next) => {
-    const emailErrorMessage = "Email is invalid";
-
-    req
-    .sanitizeBody("first")
-    .trim();
-
-    req
-    .sanitizeBody("last")
-    .trim();
-
-    req
-    .sanitizeBody("email")
-    .normalizeEmail({
-        all_lowercase: true
-    })
-    .trim();
-    req.check("email", emailErrorMessage).isEmail();
-
-    req.checkBody('confirmEmail', 'Confirmation email does not match email').equals(req.body.email);
-
-    req.check("password", "Password must be alphaNumeric (at least 1 number & 1 letter) & 8 <= length <= 15.")
-    .isLength({min: 8, max: 15})
-    .matches(/^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z]+$/);
-
-    req.checkBody('confirmPassword', 'Confirmation password does not match password').equals(req.body.password);
-
-    req.getValidationResult().then(error => {
-        if (!error.isEmpty()) {
-            let messages = error.array().map(e => e.msg);
-            let messageString = messages.join(" and ");
-            req.skip = true; //tells to skip the create action and instead go to redirectView
-            req.flash("error", messageString);
-            var redirectPath = "parent/sign-up?firstName=" + req.body.first + "&lastName=" + req.body.last;
-            if(!messageString.includes(emailErrorMessage)){
-                redirectPath = redirectPath + "&userEmail=" + req.body.email;
-            }
-            res.locals.redirect = redirectPath;
-            next();
-        } else {
-            next();
-        }
-    });
-}
     

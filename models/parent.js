@@ -1,8 +1,10 @@
-const passportLocalMongoose = require("passport-local-mongoose");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+"use strict";
 
-const ParentSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+const passportLocalMongoose = require("passport-local-mongoose");
+
+const ParentSchema = new Schema({
   name:{
     first: {
       type: String,
@@ -23,46 +25,16 @@ const ParentSchema = new mongoose.Schema({
     required: true,
     lowercase:true,
     unique:true
-  },
-  dateAdded: {
-    type: Date,
-    default: Date.now
-  },
+  }
 },
   {
     timestamps:true
 });
 
-ParentSchema.virtual("fullName")
-  .get(function() {
+ParentSchema.virtual("fullName").get(function() {
     return `${this.name.first} ${this.name.last}`;
   });
 
 ParentSchema.plugin(passportLocalMongoose, {usernameField: "email"});
 
-const Parent = mongoose.model("Parent", ParentSchema);
-
-module.exports = Parent;
-
-/*
-//encrypt password everytime a parent object is saved.
-ParentSchema.pre("save", function(next) {
-  let user = this;
-  bcrypt.hash(user.password, 10).then(hash => {
-    user.password = hash;
-    next();
-  })
-      
-  .catch(error => {
-    console.log(`Error in hashing password: ${error.message}`);
-    next(error);
-  });
-});
-
-//Passwords are compared using bcrypt - the encryption engine.
-ParentSchema.methods.passwordComparision = function(inputPassword){
-  let user = this;
-
-  return bcrypt.compare(inputPassword, user.password);
-}
-*/
+module.exports = mongoose.model("Parent", ParentSchema);;

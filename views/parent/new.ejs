@@ -5,7 +5,7 @@
             <div class="text-center" style="margin-top:1rem">
                 <label for="inputFirstName" style="width:9rem;text-align:right;">First Name:</label>
                 <% if((typeof firstName === 'undefined') || (firstName === null)){ %>
-                    <input id="inputFirstName" type="text" name="first" placeholder="First Name" style="width:65%;" required>
+                    <input id="inputFirstName" type="text" name="first" placeholder="First Name" style="width:65%;" required autofocus>
                 <% } else { %>
                     <input id="inputFirstName" type="text" name="first" style="width:65%;" value=<%= firstName; %> >
                 <% }; %>
@@ -22,17 +22,12 @@
 
             <div class="text-center" style="margin-top:1rem">
                 <label for="inputEmail" style="width:9rem;text-align:right;">Email:</label>
-                <% if((typeof registerEmail === 'undefined') || (registerEmail === null)){ %>
+                <% if((typeof userEmail === 'undefined') || (userEmail === null)){ %>
                     <input id="inputEmail" type="email" name="email" placeholder="Email..." style="width:65%;" required>
                 <% } else { %>
                     <input id="inputEmail" type="email" name="email" style="width:65%;" value=<%= userEmail; %>>
                 <% }; %>
             </div>
-
-            <div class="text-center" style="margin-top:1rem">
-                <label for="inputConfirmEmail" style="width:9rem;text-align:right;">Confirm Email:</label>
-                <input id="inputConfirmEmail" type="email" name="confirmEmail" placeholder="Confirm email" style="width:65%;">
-            </div>    
 
             <div class="text-center" style="margin-top:1rem">
                 <label for="inputPassword" style="width:9rem;text-align:right;">Password:</label>
