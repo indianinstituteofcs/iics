@@ -58,8 +58,8 @@ exports.new = (req, res) => { //Take input to create a new parent
 exports.signUp = (req, res) => {
     console.log(fName+ "signUp:");
     res.render("parent/signup", {
-        newParentEmail:req.query.newParentEmail,
-        email:req.query.loginEmail
+        registerEmail:req.query.registerEmail,
+        loginEmail:req.query.loginEmail
     });
 };
 
@@ -91,12 +91,31 @@ exports.validateLogIn = (req, res, next) => {
         req.flash("error", messageString);
         var redirectPath = "/parent/signup";
         if(!messageString.includes("Invalid email")){
-            redirectPath = redirectPath + "&email=" + req.body.email;
+            redirectPath = redirectPath + "&loginEmail=" + req.body.email;
         }
         res.redirect(redirectPath);
     } else {
-        console.log("SUCCESS: email ("+ req.query.email +") and password ("+ req.query.password +")are valid");
-        authenticateThenLogin(req, res, next);
+        console.log("SUCCESS: email ("+ req.body.email +") and password ("+ req.body.password +")are valid");
+
+        let inputEmail = req.body.email;
+        Parent.findOne({email: inputEmail})
+        .exec()
+    
+        .then((data)=>{
+            if(!data){//user is not in DB. Cannot login. Register the new user.
+                req.flash("error",`${inputEmail} is new. Register user.`);
+                console.log(`ERROR: ${inputEmail} is new. Register user.`);
+                res.redirect("/parent/signup?registerEmail=" + inputEmail);
+            } else {//user is in DB. Go ahead and log in. 
+                console.log(inputEmail + " is in DB. Proceeding to authenticate.");
+                authenticateThenLogin(req, res, next);
+            }
+        })
+    
+        .catch((error) => {
+            console.log(`Error fetching user by email(${inputEmail}): ${error.message}`);
+            next(error);
+        })    
     }
 }
 
@@ -124,7 +143,7 @@ exports.validateEmailCheck = (req, res, next) => {
             if(data){
                 req.flash("error",`${inputEmail} is registered. Try logging in with it.`);
                 console.log(`ERROR: ${inputEmail} is registered. Try logging in with it.`);
-                res.locals.redirect = "/parent/signup?email=" + inputEmail;
+                res.locals.redirect = "/parent/signup?loginEmail=" + inputEmail;
             } else {
                 console.log(inputEmail + " is new. Register user");
                 res.locals.redirect = "/parent/new?userEmail=" + inputEmail;
@@ -194,7 +213,7 @@ create = (req, res, next) => {
         if(data){//email is in DB. Send it to login screen with message
             req.flash("error", `${userParams.email} is already registered`);
             console.log("ERROR: " + userParams.email + " is already registered");
-            res.locals.redirect = `parent/signup/?loginEmail=${userParams.email}`;
+            res.locals.redirect = `/parent/signup/?loginEmail=${userParams.email}`;
             return next();
         } else { //email is NOT in DB. Create new parent object, save to DB and go to parent area.
             console.log("User ("+userParams.email+") is not in DB. Will try to add it.");
