@@ -1,0 +1,22 @@
+<div class="jumbotron text-center" style="width:95%;margin:auto;margin-top:1rem">
+    <% if(!currentUser) { %>
+        <h3>Account Info</h3>
+        <p>No student is currently logged in.</p>
+    <% } else { %>
+        <% if (currentUser.enrolled) {%>
+            <h3> <%= currentUser.fullName; %> is enrolled in <br/>
+                A College-Level Introduction to Computing Using Java.
+            </h3>
+        <% } else { %>
+
+        <% } %>
+            <h3> <%= currentUser.fullName; %> is not enrolled in <br/>
+                A College-Level Introduction to Computing Using Java.
+            </h3>
+
+            <a class="btn btn-md btn-success" href='#' role=button style="margin-top:2rem;width:15rem">
+                Enroll
+            </a>
+    <% } %>
+    </div>
+</div>

@@ -15,12 +15,33 @@
                 <a class="nav-link" href='/class'>The Class</a>
             </li>
             <li class="nav-item">
-                <a  class="nav-link" href='/about'>About </a>
+                <a  class="nav-link" href='/about'>About</a>
             </li>
         </ul>
         <ul class="navbar-nav">
+        <% if (currentUser) {%>
+            <li class="nav-item dropdown">
+                <a class="nav-item nav-link dropdown-toggle mr-md-2" href="#" id="bd-versions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <%= currentUser.fullName %>
+                </a>
+                <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="bd-versions">
+                    <a class="dropdown-item" href="/student/enroll">Enroll</a>
+                    <a class="dropdown-item" href="/student/show">View</a>
+                    <a class="dropdown-item" href="/student/edit-info">Edit Info</a>
+                    <a class="dropdown-item" href="/student/edit-password">Edit Password</a>                    
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/student/logout">Logout</a>
+                </div>
+            </li>
+        <% } else { %>
             <li class="nav-item">
-                <a class="nav-link" href='/parent/signup'> Parent Account </a>
+                <a class="nav-link" href='/student/signup'>Sign In</a>
+            </li>
+        <% }%>
+
+            <li class="nav-item">
+                <a class="nav-link" href='/student/signup'>
+                </a>
             </li>
         </ul>
     </div>

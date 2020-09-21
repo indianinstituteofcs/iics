@@ -1,0 +1,54 @@
+<div>
+<% if(currentUser) { %>
+    <div class="jumbotron" style="width:95%;margin:auto;margin-top:2rem">
+        <h3 class="container text-center" style="margin-top:2rem">Account Registration</h3>
+        <p>Please log out the current user before registering new user.</p>
+    </div>
+<% } else { %>
+    <h3 class="container text-center" style="margin-top:2rem">Account Registration</h3>
+    <div class="col" style="margin-top:2rem">
+        <form name="form-sign-up" method="POST" action="/student/create" style="margin-top:0rem">
+            <div class="text-center" style="margin-top:1rem">
+                <label for="inputFirstName" style="width:9rem;text-align:right;">First Name:</label>
+                <% if((typeof firstName === 'undefined') || (firstName === null)){ %>
+                    <input id="inputFirstName" type="text" name="first" placeholder="First Name" style="width:65%;" required autofocus>
+                <% } else { %>
+                    <input id="inputFirstName" type="text" name="first" style="width:65%;" value=<%= firstName; %> >
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="inputLastName" style="width:9rem;text-align:right;">Last Name:</label>
+                <% if((typeof lastName === 'undefined') || (lastName === null)){ %>
+                    <input id="inputLastName" type="text" name="last" placeholder="Last Name" style="width:65%;" required>
+                <% } else { %>
+                    <input id="inputLastName" type="text" name="last" style="width:65%;" value=<%= lastName; %>>
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="inputEmail" style="width:9rem;text-align:right;">Email:</label>
+                <% if((typeof userEmail === 'undefined') || (userEmail === null)){ %>
+                    <input id="inputEmail" type="email" name="email" placeholder="Email..." style="width:65%;" required>
+                <% } else { %>
+                    <input id="inputEmail" type="email" name="email" style="width:65%;" value=<%= userEmail; %>>
+                <% }; %>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="inputPassword" style="width:9rem;text-align:right;">Password:</label>
+                <input id="inputPassword" type="password" name="password" placeholder="AlphaNumeric. 20 => Length => 8" style="width:65%;" required>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <label for="inputConfirmPassword" style="width:9rem;text-align:right;">Confirm Password:</label>
+                <input id="inputConfirmPassword" type="password" name="confirmPassword" placeholder="Confirm password" style="width:65%;" required>
+            </div>
+
+            <div class="text-center" style="margin-top:1rem">
+                <input type="submit" value="Register" style="width:35%" class="btn btn-md btn-info">
+            </div>
+        </form>  
+    </div>
+<% } %>
+</div>

@@ -1,0 +1,20 @@
+<div  style="margin:auto;margin-top:2rem;width:80%;">
+    <h2>Table of all registered students</h2>
+    <table class="table" style="margin-top:2rem;">
+        <thead style="text-align:left;">
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% studentList.forEach(tempStudent => { %>
+            <tr>
+                <td><%= tempStudent.fullName%></td>
+                <td><%= tempStudent.email %></td>
+                <td><%= tempStudent.enrolled %></td>
+            </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</div>
