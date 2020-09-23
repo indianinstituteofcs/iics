@@ -21,6 +21,10 @@ const StudentSchema = new Schema({
     lowercase:true,
     unique:true
   },
+  paytoken: {
+    type: String,
+    required: false
+  },
   enrolled: {
     type: Boolean,
     required: true,

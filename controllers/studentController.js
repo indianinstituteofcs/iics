@@ -1,12 +1,14 @@
-//"use strict";
+"use strict";
 
 const   Student = require("../models/student");
 const   passport = require("passport");
 const { check, validationResult } = require("express-validator");
+const { session } = require("passport");
+const { findByIdAndRemove } = require("../models/student");
 
 const fName = "studentController:";
 
-getUserParams = (body) => {
+function getUserParams(body){
     let userParams = {
         name:{
             first: body.first,
@@ -18,6 +20,49 @@ getUserParams = (body) => {
     }
     return userParams;
 }
+
+
+function makeRandomString(stringLength){
+    var rV =  '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < stringLength; i++ ) {
+        rV += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    console.log(fName + "makeRandomString: " + rV);
+    return rV;
+}
+
+//Create rV - random alphanumeric case sensitive string of length 64.
+//Store rV as paytoken for current user, also rV is the return value of the function
+exports.randomVariableJC = (req, res) => {
+    console.log(fName + "randomVariableJC");
+
+    var rV =  makeRandomString(64);
+
+    //This only gets called when a user is logged in.
+    if(res.locals.loggedIn){
+        let userParams = {paytoken: rV};
+        Student.findByIdAndUpdate(res.locals.currentUser._id, {$set: userParams},{new:true})
+        .exec()
+
+        .then((user) => {
+            console.log(`SUCCESS: ${user.fullName} payToken has been updated`);
+            console.log(user);
+            req.user = user;
+            res.locals.currentUser = user;
+        })
+
+        .catch((error) => {
+            console.log(`Error updating user (${res.locals.currentUser.fullName}): ${error.message}`);
+        })
+    } else {
+        console.log(`Error: says no one is logged in!`);
+    }
+
+    return rV;
+}
+
 
 exports.getAllStudents = (req, res, next) => {
     Student.find({}, (error, studentList) => {
@@ -41,16 +86,69 @@ exports.redirectView = (req, res, next) => {
     }
 }
 
+//return: inputToken === currentUser.paytoken and after that unset payToken.
+function matchPaymentToken(req, res){
+    var rV = false;
+    let inputToken = req.query.payment_status;
+
+    if(res.locals.loggedIn){//return false when no one is logged.
+        let currentUser = res.locals.currentUser;
+        rV = (inputToken === currentUser.paytoken);
+
+        Student.findByIdAndUpdate(currentUser._id, {$unset: {paytoken: ""}}, {new:true})
+        .exec()
+        
+        .then((user) => {
+            console.log(`SUCCESS: ${user.fullName} removed paytoken field`);
+            console.log(user);
+            req.user = user;
+            res.locals.currentUser = user;
+        })
+    
+        .catch((error) => { //Can live with this. No need to crash.
+            console.log(`Error in removing paytoken field for (${currentUser.fullName}): ${error.message}`);
+        })        
+    }
+
+    return rV;
+}
+
+
 exports.showView = (req, res) => {
     console.log(fName + "showView:");
     console.log("Student Logged In: "+ res.locals.loggedIn); 
     console.log("Student Info: ");
-    console.log(req.user);            
+    console.log(res.locals.currentUser);            
     var titleString = "IICS:Not Logged";
-    if(req.user){             
+    if(res.locals.loggedIn){             
         titleString = "IICS:"+req.user.fullName;
     }
-    res.render("student/show", {title:titleString});
+
+    if (typeof req.query.payment_status !== "undefined"){
+        //user has made payment to enroll for the course.
+        let updateEnrolled = matchPaymentToken(req, res);
+        if(updateEnrolled){    
+            Student.findByIdAndUpdate(res.locals.currentUser._id, {$set: {enrolled:true}}, {new:true})
+            .exec()
+        
+            .then((user) => {
+                console.log(`SUCCESS: ${user.fullName} has been enrolled in class`);
+                console.log(user);
+                req.user = user;
+                res.locals.currentUser = user;
+                res.render("student/show", {title:titleString});
+            })
+        
+            .catch((error) => { //JC TO DO - THIS HAS TO BE ERROR
+                console.log(`Error updating user (${res.locals.currentUser.fullName}): ${error.message}`);
+                res.render("student/show", {title:titleString});
+            })        
+        } else {
+            res.render("student/show", {title:titleString});
+        }
+    } else {
+        res.render("student/show", {title:titleString});
+    }
 };
 
 
@@ -82,7 +180,7 @@ exports.editPassword = (req, res) => {
 
 exports.enroll = (req, res) => {
     console.log(fName + "enroll:");
-    console.log("Student Logged In: "+ res.locals.loggedIn); 
+    console.log("Student Logged In: "+ req.isAuthenticated()); 
     console.log("Student Info: ");
     console.log(req.user);            
     var titleString = "IICS:Not Logged";
@@ -116,7 +214,7 @@ exports.signUp = (req, res) => {
 
 
 //JC TO DO WHY?!?!passport has to be called like this - stand alone. Moment it is in a function it hangs!!!
-authenticateThenLogin =
+const authenticateThenLogin =
     passport.authenticate("local", {
         failureRedirect: `/student/signup`,
         failureFlash: true,
@@ -135,7 +233,10 @@ exports.validationChainLogIn = [
 
 
 exports.validateLogIn = (req, res, next) => {
-    error = validationResult(req);
+    console.log(fName+"validateLogIn");
+    console.log("SessionId: "+session.id);
+    console.log("SessionId: "+session);
+    let error = validationResult(req);
     if (!error.isEmpty()) {
         let messages = error.array().map(e => e.msg);
         let messageString = messages.join(" and ");
@@ -181,7 +282,7 @@ exports.validateEmailCheck = (req, res, next) => {
     console.log(fName + "validateEmailCheck:");
     console.log( req.body);
 
-    error = validationResult(req);
+    let error = validationResult(req);
     if (!error.isEmpty()) {
         let messageString = error.array().map(e => e.msg);
         console.log("ERROR: validating email for new Student: " + messageString);
@@ -246,7 +347,7 @@ exports.validationChain = [
 
 
 exports.validate = (req, res, next) => {
-    error = validationResult(req);
+    let error = validationResult(req);
     if (!error.isEmpty()) {
         let messages = error.array().map(e => e.msg);
         let messageString = messages.join(" and ");
@@ -264,7 +365,7 @@ exports.validate = (req, res, next) => {
     }
 }
 
-create = (req, res, next) => {
+function create(req, res, next){
     console.log(fName + "create");
     //if (req.skip) next();
     let userParams = getUserParams(req.body);
@@ -321,7 +422,7 @@ exports.validationChainUpdateInfo = [
 ];
 
 
-authenticateInfoForNewEmail =
+const authenticateInfoForNewEmail =
     passport.authenticate("local", {
         failureRedirect: `/student/edit-info`,
         failureFlash: true,
@@ -357,7 +458,7 @@ exports.validateUpdateInfo = (req, res, next) => {
         email: req.body.email,
     }
 
-    Student.findByIdAndUpdate(res.locals.currentUser._id, {$set: userParams})
+    Student.findByIdAndUpdate(res.locals.currentUser._id, {$set: userParams},{new:true})
     .exec()
 
     .then((user) => {
@@ -366,7 +467,7 @@ exports.validateUpdateInfo = (req, res, next) => {
             console.log(`SUCCESS: Updated successfully for ${inputEmail}`);
             console.log(user);
             if(inputEmail !== res.locals.currentUser.email){
-                console.log("Email has been update");
+                console.log("Email has been updated");
                 authenticateInfoForNewEmail(req, res, next);
                 console.log(req.user);
                 res.locals.currentUser = req.user;
@@ -401,7 +502,7 @@ exports.validationChainUpdatePassword = [
 ];
 
 
-authenticateForNewPassword =
+const authenticateForNewPassword =
     passport.authenticate("local", {
         failureRedirect: `/student/edit-password`,
         failureFlash: true,
@@ -412,7 +513,7 @@ authenticateForNewPassword =
 exports.validateUpdatePassword = (req, res, next) => {
     console.log(fName+"validateUpdatePassword");
 
-    error = validationResult(req);
+    let error = validationResult(req);
     if (!error.isEmpty()) {
         let messages = error.array().map(e => e.msg);
         let messageString = messages.join(" and ");

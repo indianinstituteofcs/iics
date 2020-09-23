@@ -14,11 +14,13 @@
                         Learn More
                     </a>
                 </div>
-                <div class="">
-                    <a class="btn btn-md btn-success" href='/student/signup' role=button style="width:15rem">
-                        Sign In
-                    </a>
-                </div>
+                <% if (!loggedIn) {%>
+                    <div class="">
+                        <a class="btn btn-md btn-success" href='/student/signup' role=button style="width:15rem">
+                            Sign In
+                        </a>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div>
