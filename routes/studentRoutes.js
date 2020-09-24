@@ -15,9 +15,6 @@ router.post("/update-info", studentController.validationChainUpdateInfo, student
 router.get("/edit-password", studentController.editPassword);
 router.post("/update-password", studentController.validationChainUpdatePassword, studentController.validateUpdatePassword);
 
-router.get("/enroll", studentController.enroll);
-
-
 router.get("/signup", studentController.signUp);
 router.post("/new", studentController.validationChainEmailCheck, studentController.validateEmailCheck, studentController.redirectView);
 router.post("/login", studentController.validationChainLogIn, studentController.validateLogIn);

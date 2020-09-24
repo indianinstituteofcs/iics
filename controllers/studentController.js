@@ -178,18 +178,6 @@ exports.editPassword = (req, res) => {
 };
 
 
-exports.enroll = (req, res) => {
-    console.log(fName + "enroll:");
-    console.log("Student Logged In: "+ req.isAuthenticated()); 
-    console.log("Student Info: ");
-    console.log(req.user);            
-    var titleString = "IICS:Not Logged";
-    if(req.user){             
-        titleString = "IICS:Enroll";
-    }
-    res.render("student/enroll", {title:titleString});
-};
-
 exports.new = (req, res) => { //Take input to create a new student
     console.log(fName +"new: req.query:");
     console.log(req.query);

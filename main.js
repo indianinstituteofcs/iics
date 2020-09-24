@@ -95,7 +95,7 @@ app.post('/create-session', async (req, res) => {
         ],
         mode: 'payment',
         success_url: `${YOUR_DOMAIN}/student/show?payment_status=${studentController.randomVariableJC(req, res)}`,
-        cancel_url: `${YOUR_DOMAIN}/student/enroll?payment_status=0`,
+        cancel_url: `${YOUR_DOMAIN}/student/show?payment_status=0`,
     });
   
     //console.log(session);

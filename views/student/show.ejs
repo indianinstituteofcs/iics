@@ -5,15 +5,61 @@
     <% } else { %>
         <div  class="container text-center">
             <h3><%= currentUser.fullName; %>'s details</h3>
-            <% if (currentUser.enrolled) {%>
-                <h6>Enrolled in: A College-Level Introduction to Computing Using Java.</h6>
-            <% } else {%>
-                <h6>NOT Enrolled in: A College-Level Introduction to Computing Using Java.</h6>
-            <% } %>
             <h6><%= currentUser.email; %></h6>
+
+            <% if (currentUser.enrolled) {%>
+                <div class="col" style="margin-top:1.1rem">
+                    <h6>Enrolled in: A College-Level Introduction to Computing Using Java.</h6>
+                    <p>Scores for assignments, quizzes etc.</p>
+                </div>
+            <% } else {%>
+                <div class="col" style="margin-top:2rem">
+                    <h6>NOT Enrolled in: A College-Level Introduction to Computing Using Java.</h6>
+                    <a class="btn btn-md btn-success" href='#' role=button style="margin-top:1.1rem;width:15rem" id="checkout-button">
+                        Enroll
+                    </a>
+                </div>
+            <% } %>
         </div>
 
-        <div class="col" style="margin-top:1.1rem">
+    <% } %>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var checkoutButton = document.getElementById("checkout-button");
+
+    if(checkoutButton){
+        // Create an instance of the Stripe object with your publishable API key
+        var stripe = Stripe("pk_test_51HTWIEDp5YY8rA5Wk7uaNBCPsLP9Wu6qJEMEZC8cXDFCW9mZgI6hIo9TBvi1bQRWiVuck8tx1GOnlsAQR2IAFacF00o8Q214Xx");
+
+        checkoutButton.addEventListener("click", function () {
+            fetch("/create-session", {
+                method: "POST",
+            })
+            .then(function (response) {
+                //console.log("checkoutButton:response: "+response.json());
+                return response.json();
+            })
+            .then(function (session) {
+                //console.log("checkoutButton:response: "+session.id);
+                return stripe.redirectToCheckout({ sessionId: session.id });
+            })
+            .then(function (result) {
+                // If redirectToCheckout fails due to a browser or network
+                // error, you should display the localized error message to your
+                // customer using error.message.
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            })
+            .catch(function (error) {
+                console.error("Error:", error);
+            });
+        });
+    }
+  </script>
+
 <!--
             <div class="row text-center" style="margin-top:1.1rem">
                 <label style="width:4%;"></label>
@@ -22,11 +68,3 @@
                 <label style="width:55%;text-align:left;"><%= currentUser.email; %></label>
             </div>
 -->                        
-            
-            <% if (currentUser.enrolled) {%>
-                <p>Scores for assignments, quizzes etc.</p>
-            <% }%>
-        </div>
-    <% } %>
-    </div>
-</div>
