@@ -35,8 +35,8 @@ const StudentSchema = new Schema({
 });
 
 StudentSchema.virtual("fullName").get(function() {
-    return `${this.name.first} ${this.name.last}`;
-  });
+  return `${this.name.first} ${this.name.last}`;
+});
 
 StudentSchema.plugin(passportLocalMongoose, {usernameField: "email"});
 

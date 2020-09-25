@@ -11,6 +11,18 @@
 
     <div class="collapse navbar-collapse" id="collapsibleNavbar">
         <ul class="navbar-nav mr-auto">
+            <% if (loggedIn) {%>
+                <li class="nav-item dropdown">
+                    <a class="nav-item nav-link dropdown-toggle mr-md-2 text-success" href="#" id="syllabus-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Materials
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="syllabus-menu">
+                        <a class="dropdown-item" href="#">Syllabus</a>
+                        <a class="dropdown-item" href="#">Lectures</a>
+                        <a class="dropdown-item" href="#">Assignments</a>
+                    </div>    
+                </li>    
+            <% } %>
             <li class="nav-item">
                 <a class="nav-link" href='/class'>Description</a>
             </li>
@@ -19,12 +31,12 @@
             </li>
         </ul>
         <ul class="navbar-nav">
-        <% if (currentUser) {%>
+        <% if (loggedIn) {%>
             <li class="nav-item dropdown">
-                <a class="nav-item nav-link dropdown-toggle mr-md-2" href="/student/show" id="bd-versions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-item nav-link dropdown-toggle mr-md-2" href="#" id="user-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <%= currentUser.fullName %>
                 </a>
-                <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="bd-versions">
+                <div class="dropdown-menu dropdown-menu-md-right" aria-labelledby="user-menu">
                     <a class="dropdown-item" href="/student/show">View</a>
                     <a class="dropdown-item" href="/student/edit-info">Edit Info</a>
                     <a class="dropdown-item" href="/student/edit-password">Edit Password</a>                    
